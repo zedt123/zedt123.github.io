@@ -1,0 +1,29 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "Andreas Makris"
+  favicon: am.svg
+  navbar:
+    logo: am.svg
+    left:
+      - href: index.qmd
+        text: Home
+      - href: about.qmd
+        text: Blog    
+    right:
+      - icon: linkedin
+        href: https://www.linkedin.com/in/andreas-makris-41868b225/
+      - icon: github
+        href: https://github.com/zedt123
+      # - icon: twitter
+      #   href: https://twitter.com
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+
+
+
