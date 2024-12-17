@@ -1,7 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>https://zedt123.github.io/posts/Diffusion_Code/ddpm_to_sde_tutorial.html</loc>
+    <lastmod>2024-12-16T20:26:52.887Z</lastmod>
+  </url>
+  <url>
     <loc>https://zedt123.github.io/index.html</loc>
-    <lastmod>2024-12-17T06:45:36.139Z</lastmod>
+    <lastmod>2024-12-17T07:06:33.722Z</lastmod>
+  </url>
+  <url>
+    <loc>https://zedt123.github.io/about.html</loc>
+    <lastmod>2024-12-16T20:35:41.636Z</lastmod>
+  </url>
+  <url>
+    <loc>https://zedt123.github.io/posts/Diffusion/index.html</loc>
+    <lastmod>2024-12-16T20:37:48.285Z</lastmod>
   </url>
 </urlset>

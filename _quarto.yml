@@ -26,6 +26,10 @@ format:
     css: styles.css
     toc: true
 
+hooks:
+  post-render: |
+    python generate_sitemap.py
+
 
 
 
