@@ -19,11 +19,13 @@ website:
         href: https://github.com/zedt123
       # - icon: twitter
       #   href: https://twitter.com
+  site-url: https://zedt123.github.io     
 format:
   html:
     theme: cosmo
     css: styles.css
     toc: true
+
 
 
 
