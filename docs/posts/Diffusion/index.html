@@ -247,7 +247,7 @@ window.Quarto = {
 <p><span class="math display">\[
 \boldsymbol{x}_t = \sqrt{1 - \beta_t} \, \boldsymbol{x}_{t-1} + \sqrt{\beta_t} \, \boldsymbol{z}_{t-1}, \quad \boldsymbol{z}_{t-1} \sim \mathcal{N}(0, I), \quad t=1, \ldots, N
 \]</span></p>
-<p>A neural network <span class="math inline">\(\hat{\epsilon}(\boldsymbol{x}_{i}, i)\)</span> is then trained to approximate the noise added to reverse the process. That is, starting from noise <span class="math inline">\(\boldsymbol{x}_T \sim \mathcal{N}(0, I)\)</span>, we iteratively denoise it until we recover a sample <span class="math inline">\(\boldsymbol{x}_0 \sim p(\boldsymbol{x}_0)\)</span>. This reverse procedure is also a Markov chain, but its transition kernels are learned. Once trained, sampling from the model is done by reversing the diffusion process step-by-step:</p>
+<p>A neural network <span class="math inline">\(\hat{\epsilon}(\boldsymbol{x}_{t}, t)\)</span> is then trained to approximate the noise added at a single timestep to iteratively reverse the process. That is, starting from noise <span class="math inline">\(\boldsymbol{x}_T \sim \mathcal{N}(0, I)\)</span>, we iteratively denoise it until we recover a sample <span class="math inline">\(\boldsymbol{x}_0 \sim p(\boldsymbol{x}_0)\)</span>. This reverse procedure is also a Markov chain, but its transition kernels are learned. Once trained, sampling from the model is done by reversing the diffusion process step-by-step:</p>
 <p><span class="math display">\[
 \boldsymbol{x}_t = \frac{1}{\sqrt{1 - \beta_t}} \left( \boldsymbol{x}_{t+1} - \frac{\beta_t}{\sqrt{1 - \bar{\alpha}_t}} \hat{\epsilon}(\boldsymbol{x}_{t+1}, t+1) \right) + \sqrt{\beta_t} \, \boldsymbol{z}_{t-1}
 \]</span></p>
@@ -331,8 +331,8 @@ d\boldsymbol{x} = \left[ -\frac{1}{2} \beta(t) \boldsymbol{x}(t) - \beta(t) \nab
 <p><span class="math display">\[
 \begin{align*}
     \boldsymbol{x}_t &amp;= \sqrt{1 - \beta_t} \, \boldsymbol{x}_{t-1} + \sqrt{\beta_t} \, \boldsymbol{z}_{t-1} \\
-    \iff \boldsymbol{x}_t &amp;= \sqrt{1 - \bar{\beta}_t \Delta t} \, \boldsymbol{x}_{t-1} + \sqrt{\bar{\beta}_t \Delta t} \, \boldsymbol{z}_{t-1} \quad \text{by the definition of } \bar{\beta}_t \\
-    \iff \boldsymbol{x}_t &amp;= \left(1 - \frac{\bar{\beta}_t \Delta t}{2}\right) \boldsymbol{x}_{t-1} + \sqrt{\bar{\beta}_t \Delta t} \, \boldsymbol{z}_{t-1} \quad \text{as } \Delta t \to 0 \\
+    \iff \boldsymbol{x}_t &amp;= \sqrt{1 - \bar{\beta}_t \Delta t} \, \boldsymbol{x}_{t-1} + \sqrt{\bar{\beta}_t \Delta t} \, \boldsymbol{z}_{t-1}, \quad \text{by the definition of } \bar{\beta}_t \\
+    \iff \boldsymbol{x}_t &amp;= \left(1 - \frac{\bar{\beta}_t \Delta t}{2}\right) \boldsymbol{x}_{t-1} + \sqrt{\bar{\beta}_t \Delta t} \, \boldsymbol{z}_{t-1}, \quad \text{as } \Delta t \to 0 \\
     \iff \boldsymbol{x}_{t} &amp;= \boldsymbol{x}_{t-1} - \frac{1}{2} \bar{\beta}_t \boldsymbol{x}_{t-1} \Delta t + \sqrt{\bar{\beta}_t \Delta t} \, \boldsymbol{z}_{t-1}    
 \end{align*}
 \]</span></p>
@@ -353,9 +353,9 @@ d\boldsymbol{x} = \left[ -\frac{1}{2} \beta(t) \boldsymbol{x}(t) - \beta(t) \nab
 \begin{align*}
 \boldsymbol{x}_t&amp;=\frac{1}{\sqrt{1-\beta_t}}\left(\boldsymbol{x}_{t+1}-\frac{\beta_t}{\sqrt{1-\bar{\alpha}_t}}\hat{\epsilon}(\boldsymbol{x}_{t+1},t+1)\right) \\
 \iff \boldsymbol{x}_t &amp;=\frac{1}{\sqrt{1-\bar{\beta}_t\Delta t}}\left(\boldsymbol{x}_{t+1}-\frac{\bar{\beta}_t\Delta t}{\sqrt{1-\bar{\alpha}_t}}\hat{\epsilon}(\boldsymbol{x}_{t+1},t+1)\right), \text{ by the definition of } \bar{\beta}_t \\
-\iff \boldsymbol{x}_t &amp;= \left(1+\frac{\bar{\beta_t}\Delta t}{2}\right)\left(\boldsymbol{x}_{t+1}-\frac{\bar{\beta}_t\Delta t}{\sqrt{1-\bar{\alpha}_t}}\hat{\epsilon}(\boldsymbol{x}_{t+1},t+1)\right), \text{ as } \Delta t \to 0 \\
+\iff \boldsymbol{x}_t &amp;= \left(1+\frac{\bar{\beta_t}\Delta t}{2}\right)\left(\boldsymbol{x}_{t+1}-\frac{\bar{\beta}_t\Delta t}{\sqrt{1-\bar{\alpha}_t}}\hat{\epsilon}(\boldsymbol{x}_{t+1},t+1)\right), \quad \text{ as } \Delta t \to 0 \\
 \iff \boldsymbol{x}_t &amp;= \boldsymbol{x}_{t+1} + \frac{\bar{\beta}_t \Delta t}{2} \boldsymbol{x}_{t+1} - \frac{\bar{\beta}_t \Delta t}{\sqrt{1 - \bar{\alpha}_t}} \hat{\epsilon}(\boldsymbol{x}_{t+1}, t+1) - \frac{(\bar{\beta}_t \Delta t)^2}{2 \sqrt{1 - \bar{\alpha}_t}} \hat{\epsilon}(\boldsymbol{x}_{t+1}, t+1) \\
-\iff \boldsymbol{x}_t &amp;= \boldsymbol{x}_{t+1} + \frac{\bar{\beta}_t \Delta t}{2} \boldsymbol{x}_{t+1} - \frac{\bar{\beta}_t \Delta t}{\sqrt{1 - \bar{\alpha}_t}} \hat{\epsilon}(\boldsymbol{x}_{t+1}, t+1)\\
+\iff \boldsymbol{x}_t &amp;= \boldsymbol{x}_{t+1} + \frac{\bar{\beta}_t \Delta t}{2} \boldsymbol{x}_{t+1} - \frac{\bar{\beta}_t \Delta t}{\sqrt{1 - \bar{\alpha}_t}} \hat{\epsilon}(\boldsymbol{x}_{t+1}, t+1), \quad \text{ as } \left(\Delta t\right)^2\approx 0 \\
 \iff \boldsymbol{x}_t &amp;= \boldsymbol{x}_{t+1} + \left(\frac{1}{2}\bar{\beta}_t\boldsymbol{x}_{t+1}-\bar{\beta}_t\frac{\hat{\epsilon}(\boldsymbol{x}_{t+1}, t+1)}{\sqrt{1 - \bar{\alpha}_t}} \right)\Delta t
 \end{align*}
 \]</span></p>
