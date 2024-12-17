@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://zedt123.github.io/posts/Diffusion_Code/ddpm_to_sde_tutorial.html</loc>
-    <lastmod>2024-12-16T20:26:52.887Z</lastmod>
+    <lastmod>2024-12-17T13:26:35.296Z</lastmod>
   </url>
   <url>
     <loc>https://zedt123.github.io/index.html</loc>
@@ -10,10 +10,14 @@
   </url>
   <url>
     <loc>https://zedt123.github.io/about.html</loc>
-    <lastmod>2024-12-16T20:35:41.636Z</lastmod>
+    <lastmod>2024-12-17T13:19:33.751Z</lastmod>
   </url>
   <url>
     <loc>https://zedt123.github.io/posts/Diffusion/index.html</loc>
-    <lastmod>2024-12-16T20:37:48.285Z</lastmod>
+    <lastmod>2024-12-17T13:26:42.226Z</lastmod>
+  </url>
+  <url>
+    <loc>https://zedt123.github.io/posts/VP_SDE/ve_sde_tutorial.html</loc>
+    <lastmod>2024-12-17T13:15:59.213Z</lastmod>
   </url>
 </urlset>

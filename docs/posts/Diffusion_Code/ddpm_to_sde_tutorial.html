@@ -237,7 +237,7 @@ window.Quarto = {
 
 
 <p><img src="sde_ddpm_2.png" class="img-fluid"></p>
-<p>As we know there are two formulations of diffusion models. In this tutorial we show their relationship with a toy example. Diffusion models start from samples from a simple distribution (usually <span class="math inline">\(\mathcal{N}(0,1)\)</span>) and iteratively transform them to generate samples from a target distribution (in our example <span class="math inline">\(\mathcal{N}(5,2^2)\)</span>). To do so we often need to train a neural network using samples from the target distribution.</p>
+<p>As we know there are two formulations of diffusion models (<a href="https://arxiv.org/abs/2006.11239">DDPM</a>, <a href="https://arxiv.org/abs/2011.13456">SDE Diffusion</a>) . In this tutorial we show their relationship with a toy example. Diffusion models start from samples from a simple distribution (usually <span class="math inline">\(\mathcal{N}(0,1)\)</span>) and iteratively transform them to generate samples from a target distribution (in our example <span class="math inline">\(\mathcal{N}(5,2^2)\)</span>). To do so we often need to train a neural network using samples from the target distribution.</p>
 <p>We start with the Markov Chain formulation of the diffusion models, also known as <strong>DDPMs</strong>. The forward process (data to noise) is:</p>
 <p><span class="math display">\[\boldsymbol{x}_t = \sqrt{1 - \beta_t} \, \boldsymbol{x}_{t-1} + \sqrt{\beta_t} \, \boldsymbol{z}_{t-1}, \quad \boldsymbol{z}_{t-1} \sim \mathcal{N}(0, I), \quad t=1, \ldots, N\]</span></p>
 <p>which can be done in a single step:</p>
