@@ -237,7 +237,7 @@ window.Quarto = {
 
 
 <p><img src="ve_diff.jpeg" class="img-fluid"></p>
-<p>In the previous post we have seen the VP Diffusion model. An other popular type of Diffusion models are the Variance Exploding (VE) SDEs:</p>
+<p>In the previous post we have seen the VP Diffusion model <a href="hhttps://arxiv.org/abs/2006.11239">DDPM</a>. An other popular type of Diffusion models are the Variance Exploding (VE) SDEs <a href="https://arxiv.org/abs/2011.13456">SDE Diffusion</a>:</p>
 <p><span class="math display">\[d\boldsymbol{x}=\sqrt{\left[\frac{d}{dt}\sigma^2(t)\right]}d\boldsymbol{w}\]</span></p>
 <p>with the following reverse process:</p>
 <p><span class="math display">\[d\boldsymbol{x}=\left[-\frac{d}{dt}\left(\sigma^2(t)\right)\nabla_{\boldsymbol{x}}\log p_t(\boldsymbol{x})\right]dt+\sqrt{\left[\frac{d}{dt}\sigma^2(t)\right]}d\bar{\boldsymbol{w}}\]</span></p>
@@ -373,7 +373,7 @@ Estimated std is 50.15424346923828</code></pre>
 </div>
 </div>
 </div>
-<p>Now we will use the exact score to perform the reverse diffusion. We assume that <span class="math inline">\(p_1(x)=\mathcal{N}(5,50)\)</span> (since we now the mean of <span class="math inline">\(p_0(x)\)</span> we can use it instead of 0). Then,</p>
+<p>Now we will use the exact score to perform the reverse diffusion. We assume that <span class="math inline">\(p_1(x)=\mathcal{N}(5,50)\)</span> (since we know the mean of <span class="math inline">\(p_0(x)\)</span> we can use it instead of 0). Then,</p>
 <p><span class="math display">\[p_t(x)=\mathcal{N}(5, 4 + \sigma_{t}^2 - \sigma_{\text{min}}^2)\]</span></p>
 <p>and</p>
 <p><span class="math display">\[\nabla_x\log p_t(x)=\frac{5-x}{4 + \sigma_{t}^2 - \sigma_{\text{min}}^2}\]</span></p>
@@ -451,7 +451,7 @@ Estimated std is 1.9858821630477905</code></pre>
 </div>
 </div>
 </div>
-<p>If you want a sanity check, try modifiying the code above, so that the we sample from <span class="math inline">\(\mathcal{N}(0,50^2)\)</span> at <span class="math inline">\(t=1\)</span>. Note that the score function should not be modified!</p>
+<p>If you want a sanity check, try modifiying the code above, so that the we sample from <span class="math inline">\(\mathcal{N}(0,50^2)\)</span> at <span class="math inline">\(t=1\)</span>. In a real-world example we will not know the mean of <span class="math inline">\(p_0(x)\)</span>, which is the same as the mean of <span class="math inline">\(p_1(x)\)</span>, and we use <span class="math inline">\(0\)</span> instead. Note that the score function should not be modified (in a real-world example the score is estimated with a neural network)!</p>
 <p>You can also check what happens if you ignore <span class="math inline">\(\sigma_{\text{min}}^2\)</span> in the denominator of the score function. Spoiler alert: it is that small that makes no difference.</p>
 
 
