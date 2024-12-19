@@ -16,7 +16,7 @@ In the past few years, diffusion models [@ddpm; @sde_diff; @latent_diff; @sora] 
 
 ## Diffusion Models with Discrete Markov Chains (DDPMs)
 
-Diffusion models were popularized by Denoising Diffusion Probabilistic Models (DDPMs) [@ddpm]. The core idea is to start with a data distribution $p(\boldsymbol{x}_0)$ and define a forward diffusion process that gradually adds noise to the data over a finite sequence of time steps $(\boldsymbol{x}_0, \boldsymbol{x}_1, \ldots, \boldsymbol{x}_T)$. At each step, Gaussian noise is added according to a predefined schedule $\{\beta_t\}_{t=1}^N$. This process transforms an original data sample $\boldsymbol{x}_0$ into a nearly pure noise sample $\boldsymbol{x}_T$. Formally, the forward process is given by:
+Diffusion models were popularized by Denoising Diffusion Probabilistic Models (DDPMs) [@ddpm]. The core idea is to start with a data distribution $p_0(\boldsymbol{x}_0)$ and define a forward diffusion process that gradually adds noise to the data over a finite sequence of time steps $(\boldsymbol{x}_0, \boldsymbol{x}_1, \ldots, \boldsymbol{x}_T)$. At each step, Gaussian noise is added according to a predefined schedule $\{\beta_t\}_{t=1}^N$. This process transforms an original data sample $\boldsymbol{x}_0$ into a nearly pure noise sample $\boldsymbol{x}_T$. Formally, the forward process is given by:
 
 $$
 \boldsymbol{x}_t = \sqrt{1 - \beta_t} \, \boldsymbol{x}_{t-1} + \sqrt{\beta_t} \, \boldsymbol{z}_{t-1}, \quad \boldsymbol{z}_{t-1} \sim \mathcal{N}(0, I), \quad t=1, \ldots, N
@@ -28,7 +28,7 @@ $$
 \boldsymbol{x}_t = \frac{1}{\sqrt{1 - \beta_t}} \left( \boldsymbol{x}_{t+1} - \frac{\beta_t}{\sqrt{1 - \bar{\alpha}_t}} \hat{\epsilon}(\boldsymbol{x}_{t+1}, t+1) \right) + \sqrt{\beta_t} \, \boldsymbol{z}_{t-1}
 $$
 
-where we have defined $\bar{\alpha}_t := \prod_{s=1}^t \alpha_s$. A common choice of hyperparameters in this setting is:
+where we have defined $\alpha_t := 1 - \beta_t$ and $\bar{\alpha}_t := \prod_{s=1}^t \alpha_s$ for $t=1,...,T$. A common choice of hyperparameters in this setting is:
 
 $$
 \begin{align*}
@@ -115,7 +115,7 @@ $$
 If we set $x = \bar{\beta}_t \Delta t$, we have:
 
 $$
-\sqrt{1 - \bar{\beta}_t \Delta t} = 1 - \frac{\bar{\beta}_t \Delta t}{2} - \frac{\bar{\beta}_t \Delta t^2}{8} - \ldots
+\sqrt{1 - \bar{\beta}_t \Delta t} = 1 - \frac{\bar{\beta}_t \Delta t}{2} - \frac{\bar{\beta}_t^2 \Delta t^2}{8} - \ldots
 $$
 
 and as $\Delta t$ approaches 0, the approximation $\sqrt{1 - \bar{\beta}_t \Delta t} \approx 1 - \frac{\bar{\beta}_t \Delta t}{2}$ improves. Then, starting from the left-hand side of Equivalence (\ref{eq:equiv_1}):
@@ -144,7 +144,7 @@ $$\frac{1}{\sqrt{1-x}}=1+\frac{x}{2}+\frac{3x^2}{8}+...$$
 
 If we set $x=\bar{\beta_t}\Delta t$ we have:
 
-$$\frac{1}{\sqrt{1-\bar{\beta_t}\Delta t}}=1+\frac{\bar{\beta_t}\Delta t}{2}+\frac{3\bar{\beta_t}\Delta t^2}{8}+...$$
+$$\frac{1}{\sqrt{1-\bar{\beta_t}\Delta t}}=1+\frac{\bar{\beta_t}\Delta t}{2}+\frac{3\bar{\beta_t}^2\Delta t^2}{8}+...$$
 
 and as $\Delta t$ approaches 0 the approximation $\frac{1}{\sqrt{1-\bar{\beta_t\Delta t}}}\approx 1+\frac{\bar{\beta_t}\Delta t}{2}$ improves. Then, starting from the left hand side of equivalence (\ref{eq:equiv_2}):
 
