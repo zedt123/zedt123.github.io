@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Andreas Makris">
+<meta name="dcterms.date" content="2024-12-20">
+<meta name="description" content="A tutorial to understand how to sample faster using DDPM and DDIM.">
+
+<title>DDIM Tutorial – Andreas Makris</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../am.svg" rel="icon" type="image/svg+xml">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../am.svg" alt="" class="navbar-logo">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Andreas Makris</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/andreas-makris-41868b225/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/zedt123"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">DDIM Tutorial</h1>
+                  <div>
+        <div class="description">
+          A tutorial to understand how to sample faster using DDPM and DDIM.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">diffusion</div>
+                <div class="quarto-category">tutorial</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Andreas Makris </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">December 20, 2024</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#skipping-ddpm-timesteps" id="toc-skipping-ddpm-timesteps" class="nav-link active" data-scroll-target="#skipping-ddpm-timesteps">Skipping DDPM Timesteps</a></li>
+  <li><a href="#ddim" id="toc-ddim" class="nav-link" data-scroll-target="#ddim">DDIM</a>
+  <ul class="collapse">
+  <li><a href="#ddpm-sampling-explained" id="toc-ddpm-sampling-explained" class="nav-link" data-scroll-target="#ddpm-sampling-explained">DDPM Sampling Explained</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p><img src="ddim_img.jpeg" class="img-fluid"></p>
+<p>The main downside of diffusion models is the time they take to generate samples. To do so, they need to reverse all forward timesteps (which are often 1,000 or more). There are a few ways we can speed this up, while only slightly compromising sample quality.</p>
+<section id="skipping-ddpm-timesteps" class="level1">
+<h1>Skipping DDPM Timesteps</h1>
+<p>The simplest way to speed the reverse process is to skip some of the timesteps.</p>
+<p>Let <span class="math inline">\(\bar{\alpha}_1,...,\bar{\alpha}_T\)</span> be the diffusion parameters with <span class="math inline">\(\bar{\alpha}_1\approx 1.0\)</span> and <span class="math inline">\(\bar{\alpha}_T\approx 0.0\)</span>. Then, we select <span class="math inline">\(\tau &lt; T\)</span> of these parameters <span class="math inline">\(\bar{\alpha}_{i_i},...,\bar{\alpha}_{i_\tau}\)</span> , where <span class="math inline">\(i_1=1&lt;i_2&lt;...&lt;i_\tau=T\)</span> and skip the rest. There are many ways to choose the individual indices <span class="math inline">\(i_2,...,i_{\tau-1}\)</span>. The simplest choice is to choose evenly spaced indices (or almost evenly spaced indices), i.e.&nbsp;use numpy’s linspace function, with the option to only return integers.</p>
+<p>To give a concrete example, consider <span class="math inline">\(T=1,000\)</span> and <span class="math inline">\(\tau=100\)</span>. Then, we select <span class="math inline">\(\alpha_1,\alpha_{11},...,\alpha_{989}, \alpha_{1000}\)</span>.</p>
+<p>After selecting <span class="math inline">\(\bar{\alpha}\)</span>, we need to <strong>derive</strong> <span class="math inline">\(\beta\)</span>. This step is crucial because, in the original formulation of DDPM, we began by defining <span class="math inline">\(\beta\)</span> and then derived <span class="math inline">\(\bar{\alpha}\)</span>. For the diffusion process to function effectively, it is essential that <span class="math inline">\(\bar{\alpha}_1 \approx 1.0\)</span> and <span class="math inline">\(\bar{\alpha}_T \approx 0.0\)</span>. This ensures that:</p>
+<p><span class="math display">\[p_T(\boldsymbol{x}_T)\approx \mathcal{N}(0,I)\]</span></p>
+<p>and</p>
+<p><span class="math display">\[p_t(\boldsymbol{x}_t)\approx p_{\text{data}} \quad \text{for small } t\]</span></p>
+<p>To derive the <span class="math inline">\(\beta\)</span> we look back at how we created <span class="math inline">\(\bar{\alpha}\)</span> from them and reverse that. Below we show the first 2 <span class="math inline">\(\beta\)</span> and the general case:</p>
+<p><span class="math inline">\(\bar{\alpha}_1\)</span> = <span class="math inline">\((1 - \beta_1)\)</span></p>
+<p><span class="math inline">\(\bar{\alpha}_2\)</span> = <span class="math inline">\(\bar{\alpha}_1(1 - \beta_2)\)</span></p>
+<p><span class="math inline">\(\bar{\alpha}_t\)</span> = <span class="math inline">\(\bar{\alpha}_{t-1}(1 - \beta_t)\)</span></p>
+<p>and so on. We can solve this with respect to <span class="math inline">\(\beta\)</span>:</p>
+<p><span class="math inline">\(\beta_1 = 1 - \bar{\alpha}_1\)</span></p>
+<p><span class="math inline">\(\beta_2 = 1 - \frac{\bar{\alpha}_2}{\bar{\alpha}_1}\)</span></p>
+<p><span class="math inline">\(\beta_t = 1 - \frac{\bar{\alpha}_{t}}{\bar{\alpha}_{t-1}}\)</span></p>
+<p>In our case, since we only pick some of the <span class="math inline">\(\bar{\alpha}\)</span>, want them to preserve this property. Let <span class="math inline">\(\tilde{\beta}\)</span> be the new <span class="math inline">\(\beta\)</span> corresponding to the re-indexed <span class="math inline">\(\bar{\alpha}\)</span>. Then we want:</p>
+<p><span class="math inline">\(\bar{\alpha}_{i_1}\)</span> = <span class="math inline">\((1 - \tilde{\beta}_{1})\)</span></p>
+<p><span class="math inline">\(\bar{\alpha}_{i_2}\)</span> = <span class="math inline">\(\bar{\alpha}_{i_1}(1 - \beta_2)\)</span></p>
+<p><span class="math inline">\(\bar{\alpha}_{i_t}\)</span> = <span class="math inline">\(\bar{\alpha}_{i_{t-1}}(1 - \beta_t)\)</span></p>
+<p>and again if we solve with respect to <span class="math inline">\(\tilde{\beta}\)</span>:</p>
+<p><span class="math inline">\(\tilde{\beta}_1 = 1 - \bar{\alpha}_{i_1}\)</span></p>
+<p><span class="math inline">\(\tilde{\beta}_2 = 1 - \frac{\bar{\alpha}_{i_2}}{\bar{\alpha}_{i_1}}\)</span></p>
+<p><span class="math inline">\(\tilde{\beta}_t = 1 - \frac{\bar{\alpha}_{i_t}}{\bar{\alpha}_{i_{t-1}}}\)</span></p>
+<p>Below we show how to code this up.</p>
+<div id="cell-4" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the beta</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>beta_start <span class="op">=</span> <span class="fl">0.0001</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>beta_end <span class="op">=</span> <span class="fl">0.02</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>num_timesteps <span class="op">=</span> <span class="dv">1000</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>betas <span class="op">=</span> np.linspace(beta_start, beta_end, num_timesteps)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the alpha_bars</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>alpha_bar <span class="op">=</span> np.cumprod(<span class="dv">1</span> <span class="op">-</span> betas)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Check the values of the first and last alpha_bar</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"The first alpha_bar is close to 1: </span><span class="sc">{</span>alpha_bar[<span class="dv">0</span>]<span class="sc">:.5f}</span><span class="ss">"</span>)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"The last alpha_bar is close to 0: </span><span class="sc">{</span>alpha_bar[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.5f}</span><span class="ss">"</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Choose some of the alpha_bar (e.g. 10)</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>respaced_indices <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">999</span>, <span class="dv">10</span>, dtype<span class="op">=</span>np.int16) <span class="co"># We use 0-999 due to Python indexing</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>respaced_alpha_bar <span class="op">=</span> alpha_bar[respaced_indices]</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Derive the beta from the alpha</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>alpha_prev <span class="op">=</span> <span class="fl">1.0</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>beta_tilde <span class="op">=</span> np.zeros(<span class="dv">10</span>)</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> t <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">10</span>):</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    current_alpha <span class="op">=</span> respaced_alpha_bar[t]</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    beta_tilde[t] <span class="op">=</span> <span class="dv">1</span> <span class="op">-</span> current_alpha <span class="op">/</span> alpha_prev</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    alpha_prev <span class="op">=</span> current_alpha</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="co"># Derive the alpha from beta tilde to make sure they are correct!</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>check_respaced_alpha_bar <span class="op">=</span> np.cumprod(<span class="dv">1</span> <span class="op">-</span> beta_tilde)</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">The respaced alphas are the same: </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">all</span>((check_respaced_alpha_bar <span class="op">-</span> respaced_alpha_bar)<span class="op">&lt;</span><span class="fl">0.00001</span>)<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>The first alpha_bar is close to 1: 0.99990
+The last alpha_bar is close to 0: 0.00004
+
+The respaced alphas are the same: True</code></pre>
+</div>
+</div>
+<p>To check how well sample quality is with 10 respaced reverse steps, rather than 1000 we modify the exact DDPM to sample.</p>
+<div id="cell-6" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Exact_DDPM():</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_timesteps, betas):</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>(Exact_DDPM, <span class="va">self</span>).<span class="fu">__init__</span>()</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.num_timesteps <span class="op">=</span> num_timesteps</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.beta <span class="op">=</span> torch.from_numpy(betas)  </span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.alpha <span class="op">=</span> <span class="dv">1</span> <span class="op">-</span> <span class="va">self</span>.beta</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.alpha_bar <span class="op">=</span> torch.cumprod(<span class="va">self</span>.alpha,dim<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.sqrt_beta <span class="op">=</span> torch.sqrt(<span class="va">self</span>.beta)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.sqrt_alpha_bar <span class="op">=</span> torch.sqrt(<span class="va">self</span>.alpha_bar)</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.sqrt_one_alpha_bar <span class="op">=</span> torch.sqrt(<span class="dv">1</span><span class="op">-</span><span class="va">self</span>.alpha_bar)</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.reverse_factor <span class="op">=</span> <span class="dv">1</span> <span class="op">/</span> torch.sqrt(<span class="dv">1</span><span class="op">-</span><span class="va">self</span>.beta)</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.reverse_factor_2 <span class="op">=</span> torch.sqrt(<span class="dv">1</span><span class="op">-</span><span class="va">self</span>.alpha_bar)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> reverse_diff(<span class="va">self</span>, sample_size):</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> torch.inference_mode():</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>            samples <span class="op">=</span> torch.zeros((<span class="va">self</span>.num_timesteps<span class="op">+</span><span class="dv">1</span>, sample_size))</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>            samples[<span class="op">-</span><span class="dv">1</span>] <span class="op">=</span> torch.randn(sample_size)</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> t <span class="kw">in</span> <span class="bu">range</span>(<span class="va">self</span>.num_timesteps<span class="op">-</span><span class="dv">1</span>,<span class="op">-</span><span class="dv">1</span>,<span class="op">-</span><span class="dv">1</span>):</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>                exact_sample <span class="op">=</span> <span class="va">self</span>.reverse_factor[t] <span class="op">*</span> (samples[t<span class="op">+</span><span class="dv">1</span>] <span class="op">+</span> <span class="va">self</span>.beta[t]  <span class="op">*</span> <span class="va">self</span>.score(samples[t<span class="op">+</span><span class="dv">1</span>], t<span class="op">+</span><span class="dv">1</span>))</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> t <span class="op">!=</span> <span class="dv">0</span>:</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>                    samples[t] <span class="op">=</span> exact_sample <span class="op">+</span> <span class="va">self</span>.sqrt_beta[t] <span class="op">*</span> torch.randn(sample_size)</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>                <span class="cf">else</span>:</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>                    samples[t] <span class="op">=</span> exact_sample</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> samples</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> score(<span class="va">self</span>,x,t):</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>        numerator <span class="op">=</span> <span class="dv">5</span> <span class="op">*</span><span class="va">self</span>.sqrt_alpha_bar[t<span class="op">-</span><span class="dv">1</span>] <span class="op">-</span> x</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>        denomenator <span class="op">=</span> <span class="dv">3</span> <span class="op">*</span> <span class="va">self</span>.alpha_bar[t<span class="op">-</span><span class="dv">1</span>] <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> numerator <span class="op">/</span> denomenator    </span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="co"># Use the beta_tilde from above</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>diffusion <span class="op">=</span> Exact_DDPM(<span class="dv">10</span>, beta_tilde)</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>samples <span class="op">=</span> diffusion.reverse_diff(<span class="dv">10000</span>).numpy()</span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>plot_sample <span class="op">=</span> samples[<span class="dv">0</span>]</span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Estimated mean is </span><span class="sc">{</span>np<span class="sc">.</span>mean(plot_sample)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Estimated std is </span><span class="sc">{</span>np<span class="sc">.</span>std(plot_sample)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>plt.hist(plot_sample, density<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a><span class="co"># Define parameters for the normal distribution</span></span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>mean <span class="op">=</span> <span class="fl">5.0</span></span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>std <span class="op">=</span> <span class="fl">2.0</span></span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a range of x values</span></span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>xmin, xmax <span class="op">=</span> plt.xlim()</span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> torch.linspace(xmin, xmax, <span class="dv">200</span>).numpy()</span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the normal PDF: (1/(σ√(2π))) exp(-(x-μ)²/(2σ²))</span></span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>pdf <span class="op">=</span> (<span class="dv">1</span><span class="op">/</span>(std <span class="op">*</span> np.sqrt(<span class="dv">2</span><span class="op">*</span>np.pi))) <span class="op">*</span> np.exp(<span class="op">-</span><span class="fl">0.5</span><span class="op">*</span>((x <span class="op">-</span> mean)<span class="op">/</span>std)<span class="op">**</span><span class="dv">2</span>)</span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the PDF line</span></span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>plt.plot(x, pdf, <span class="st">'r'</span>, linewidth<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Estimated mean is 4.992445945739746
+Estimated std is 1.7646558284759521</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ddim_files/figure-html/cell-3-output-2.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We observe that the estimation of the mean and standard deviation is slightly worse compared to the 1,000-timestep reverse process (with an estimated mean of 4.998 and an estimated standard deviation of 1.995). This minor difference occurs because the distribution we are estimating is very simple. However, if we attempt the same approach with more complex target distributions, such as images, the decline in sample estimation would be significantly greater.</p>
+<p>Remarkably, there exists a different method to transform noise into data <strong>without the need to modify the neural network</strong> (or the exact score in our toy example). This is particularly impressive because it allows us to enhance performance without retraining or altering the existing model architecture. This method sometimes achieves a smaller decline in performance when using fewer reverse timesteps. This brings us to the DDIM, a generalisation to the DDPM.</p>
+</section>
+<section id="ddim" class="level1">
+<h1>DDIM</h1>
+<p>We are not going to go over the detailed derivations of the <a href="https://arxiv.org/abs/2010.02502">DDIM</a> reverse process, but we explain the general idea. In the <a href="https://arxiv.org/abs/2006.11239">DDPM</a> case we first define <span class="math inline">\(p(\boldsymbol{x}_t|\boldsymbol{x}_{t-1})\)</span> assuming the Markov Property and from that we derive <span class="math inline">\(p(\boldsymbol{x}_t|\boldsymbol{x}_{0})\)</span> and <span class="math inline">\(p(\boldsymbol{x}_{t-1}|\boldsymbol{x}_{t},\boldsymbol{x}_{0})\)</span>. On the other hand, in the case of the DDIM, we define <span class="math inline">\(p(\boldsymbol{x}_{t-1}|\boldsymbol{x}_{t},\boldsymbol{x}_{0})\)</span>, assuming a different non-Markovian structure and then derive <span class="math inline">\(p(\boldsymbol{x}_t|\boldsymbol{x}_{0})\)</span> and <span class="math inline">\(p(\boldsymbol{x}_t|\boldsymbol{x}_{t-1})\)</span>. To do so, we give a specific form to <span class="math inline">\(p(\boldsymbol{x}_{t-1}|\boldsymbol{x}_{t},\boldsymbol{x}_{0})\)</span>, so that <span class="math inline">\(p(\boldsymbol{x}_t|\boldsymbol{x}_{0})\)</span> that is induced from it has the same form as in the DDPM case (so that we can use the same neural network). The form that is required to achieve this is the following:</p>
+<p><span class="math display">\[p(\boldsymbol{x}_{t-1}|\boldsymbol{x}_{t},\boldsymbol{x}_{0})=\mathcal{N}(\sqrt{\bar{\alpha}_{t-1}}\boldsymbol{x}_0 + \sqrt{1-\bar{\alpha}_{t-1}-\sigma_t^2}\frac{\boldsymbol{x}_t-\sqrt{\bar{\alpha}_{t}}\boldsymbol{x}_0}{\sqrt{1-\bar{\alpha}_t}},\sigma_t^2 I)\]</span></p>
+<p>where <span class="math inline">\(\sigma_t^2\)</span> is a user defined hyperparameter. If we choose <span class="math inline">\(\sigma_t^2=\frac{1-\bar{\alpha}_{t-1}}{1-\bar{\alpha}_{t}}\beta_t\)</span> we have the DDPM model! This leads to the hyperparameter <span class="math inline">\(\eta\)</span> that is used to choose <span class="math inline">\(\sigma_t:=\eta\sqrt{\frac{1-\bar{\alpha}_{t-1}}{1-\bar{\alpha}_{t}}\beta_t}\)</span>. If we set <span class="math inline">\(\eta=1\)</span> we have the DDPM reverse process. If we set <span class="math inline">\(\eta=0\)</span> we have a deterministic model! The <a href="https://arxiv.org/abs/2010.02502">DDIM</a> paper experimented with this hyperparameter and showed that the quality degradation was significantly mitigated when DDIM was used with <span class="math inline">\(\eta=0\)</span>! Below we code up the DDIM reverse process and compare it to the DDPM with 10 reverse steps. Before doing so we go over some details of the DDPM sampling process that also appear in the DDIM sampling process.</p>
+<section id="ddpm-sampling-explained" class="level2">
+<h2 class="anchored" data-anchor-id="ddpm-sampling-explained">DDPM Sampling Explained</h2>
+<p>DDPM sampling starts with some isotropic noise and iteratively uses the following formula:</p>
+<p><span class="math display">\[\boldsymbol{x}_{t-1}=\frac{1}{\sqrt{\alpha}_t}\left(\boldsymbol{x}_{t}-\frac{\beta_t}{\sqrt{1-\bar{\alpha}_t}}\hat{\epsilon}(\boldsymbol{x}_{t},t)\right)+\sqrt{\beta}_t \boldsymbol{z}_t,\]</span></p>
+<p>where <span class="math inline">\(\hat{\epsilon}(\boldsymbol{x}_{t},t)\)</span> is the neural network that estimates the noise <span class="math inline">\(\left(\text{note that in our code we instead use }\nabla_{\boldsymbol{x}_t}\log p_t(\boldsymbol{x}_t)=-\frac{\hat{\epsilon}(\boldsymbol{x}_{t},t)}{\sqrt{1-\bar{\alpha}_t}}\right)\)</span> and <span class="math inline">\(\boldsymbol{z}_t\sim\mathcal{N}(0,I)\)</span>.</p>
+<p>The DDPM sampling formula actually comes from the combination of two other formulas. First we solve the forward diffusion equations with respect to <span class="math inline">\(\boldsymbol{x}_0\)</span> to obtain an approximation of <span class="math inline">\(\boldsymbol{x}_0\)</span> given <span class="math inline">\(\boldsymbol{x}_t\)</span>:</p>
+<p><span class="math display">\[\hat{\boldsymbol{x}}_0(\boldsymbol{x}_t)=\frac{1}{\sqrt{\bar{\alpha}_t}}\left(\boldsymbol{x}_t-\sqrt{1-\bar{\alpha}_t}\hat{\epsilon}(\boldsymbol{x}_{t},t)\right)\]</span></p>
+<p>Then, we use this approximation to estimate the mean of <span class="math inline">\(p(\boldsymbol{x}_{t-1}|\boldsymbol{x}_{t},\boldsymbol{x}_{0})\)</span>:</p>
+<p><span class="math display">\[\boldsymbol{m}_t(\boldsymbol{x}_t,\hat{\boldsymbol{x}}_0 )=\frac{(1-\bar{\alpha}_{t-1})\sqrt{\alpha}_t\boldsymbol{x}_t+\sqrt{\bar{\alpha}_{t-1}}\beta_t \hat{\boldsymbol{x}}_0}{1-\bar{\alpha}_t}\]</span></p>
+<p>Finally we add some noise <span class="math inline">\((\sqrt{\beta}_t \boldsymbol{z}_t)\)</span>.</p>
+<p>This means that what the reverse diffusion actually does is it <strong>estimates</strong> <span class="math inline">\(\boldsymbol{x}_0\)</span> <strong>at each timestep</strong> and then uses that to create <span class="math inline">\(\boldsymbol{x}_{t-1}\)</span>.</p>
+<p>For the DDIM we do a similar thing. We first estimate <span class="math inline">\(\boldsymbol{x}_0\)</span> and then use is to sample from <span class="math inline">\(p(\boldsymbol{x}_{t-1}|\boldsymbol{x}_{t},\hat{\boldsymbol{x}}_{0})\)</span>.</p>
+<div id="cell-11" class="cell" data-execution_count="23">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Exact_DDIM():</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_timesteps, betas):</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>(Exact_DDIM, <span class="va">self</span>).<span class="fu">__init__</span>()</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.num_timesteps <span class="op">=</span> num_timesteps</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.beta <span class="op">=</span> torch.from_numpy(betas)  </span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.alpha <span class="op">=</span> <span class="dv">1</span> <span class="op">-</span> <span class="va">self</span>.beta</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.alpha_bar <span class="op">=</span> torch.cumprod(<span class="va">self</span>.alpha,dim<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create a tensor of alpha_bar_{t-1} so be multiplied to create the sigmas</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.alpha_bar_prev <span class="op">=</span> torch.cat([torch.tensor(torch.nan).unsqueeze(<span class="dv">0</span>),<span class="va">self</span>.alpha_bar[:<span class="op">-</span><span class="dv">1</span>]])</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.sqrt_beta <span class="op">=</span> torch.sqrt(<span class="va">self</span>.beta)</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.sqrt_alpha_bar <span class="op">=</span> torch.sqrt(<span class="va">self</span>.alpha_bar)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.sqrt_one_alpha_bar <span class="op">=</span> torch.sqrt(<span class="dv">1</span><span class="op">-</span><span class="va">self</span>.alpha_bar)</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.reverse_factor <span class="op">=</span> <span class="dv">1</span> <span class="op">/</span> torch.sqrt(<span class="dv">1</span><span class="op">-</span><span class="va">self</span>.beta)</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.reverse_factor_2 <span class="op">=</span> torch.sqrt(<span class="dv">1</span><span class="op">-</span><span class="va">self</span>.alpha_bar)</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> reverse_diff(<span class="va">self</span>, sample_size, eta<span class="op">=</span><span class="fl">0.0</span>):</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>        <span class="co"># First calculate sigma through eta</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Note that sigma[0] is none. We do not use sigma[0] </span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>        <span class="co"># since we are estimating x0 using x1</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>        sigma <span class="op">=</span> eta <span class="op">*</span> torch.sqrt((<span class="dv">1</span> <span class="op">-</span> <span class="va">self</span>.alpha_bar_prev)<span class="op">/</span>(<span class="dv">1</span> <span class="op">-</span> <span class="va">self</span>.alpha_bar)<span class="op">*</span><span class="va">self</span>.beta)</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>        sigma2 <span class="op">=</span> sigma <span class="op">**</span> <span class="dv">2</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> torch.inference_mode():</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>            samples <span class="op">=</span> torch.zeros((<span class="va">self</span>.num_timesteps<span class="op">+</span><span class="dv">1</span>, sample_size))</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>            samples[<span class="op">-</span><span class="dv">1</span>] <span class="op">=</span> torch.randn(sample_size)</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> t <span class="kw">in</span> <span class="bu">range</span>(<span class="va">self</span>.num_timesteps<span class="op">-</span><span class="dv">1</span>,<span class="op">-</span><span class="dv">1</span>,<span class="op">-</span><span class="dv">1</span>):</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>                xt <span class="op">=</span> samples[t<span class="op">+</span><span class="dv">1</span>] <span class="co"># this is x_{t+1}, we estimate x_t</span></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>                x0 <span class="op">=</span> (xt <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> <span class="va">self</span>.alpha_bar[t]) <span class="op">*</span>  <span class="va">self</span>.score(xt, t<span class="op">+</span><span class="dv">1</span>)) <span class="op">/</span> <span class="va">self</span>.sqrt_alpha_bar[t]</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> t <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>                    mean <span class="op">=</span> (<span class="va">self</span>.sqrt_alpha_bar[t<span class="op">-</span><span class="dv">1</span>] <span class="op">*</span> x0 <span class="op">+</span></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>                            torch.sqrt(<span class="dv">1</span> <span class="op">-</span> <span class="va">self</span>.alpha_bar[t<span class="op">-</span><span class="dv">1</span>]<span class="op">-</span> sigma2[t]) <span class="op">*</span></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>                            (xt <span class="op">-</span> <span class="va">self</span>.sqrt_alpha_bar[t] <span class="op">*</span> x0) <span class="op">/</span> torch.sqrt(<span class="dv">1</span><span class="op">-</span><span class="va">self</span>.alpha_bar[t])</span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>                            )</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>                    <span class="co"># Add noise</span></span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>                    samples[t] <span class="op">=</span> mean <span class="op">+</span> sigma[t] <span class="op">*</span> torch.randn_like(mean)</span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>                <span class="cf">else</span>:</span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>                    samples[<span class="dv">0</span>] <span class="op">=</span> x0</span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> samples</span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> score(<span class="va">self</span>,x,t):</span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>        numerator <span class="op">=</span> <span class="dv">5</span> <span class="op">*</span><span class="va">self</span>.sqrt_alpha_bar[t<span class="op">-</span><span class="dv">1</span>] <span class="op">-</span> x</span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>        denomenator <span class="op">=</span> <span class="dv">3</span> <span class="op">*</span> <span class="va">self</span>.alpha_bar[t<span class="op">-</span><span class="dv">1</span>] <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> numerator <span class="op">/</span> denomenator    </span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a><span class="co"># Use the beta_tilde from above</span></span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a>diffusion <span class="op">=</span> Exact_DDIM(<span class="dv">10</span>, beta_tilde)</span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a>samples <span class="op">=</span> diffusion.reverse_diff(<span class="dv">10000</span>).numpy()</span>
+<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a>plot_sample <span class="op">=</span> samples[<span class="dv">0</span>]</span>
+<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Estimated mean is </span><span class="sc">{</span>np<span class="sc">.</span>mean(plot_sample)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Estimated std is </span><span class="sc">{</span>np<span class="sc">.</span>std(plot_sample)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-62"><a href="#cb5-62" aria-hidden="true" tabindex="-1"></a>plt.hist(plot_sample, density<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb5-63"><a href="#cb5-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-64"><a href="#cb5-64" aria-hidden="true" tabindex="-1"></a><span class="co"># Define parameters for the normal distribution</span></span>
+<span id="cb5-65"><a href="#cb5-65" aria-hidden="true" tabindex="-1"></a>mean <span class="op">=</span> <span class="fl">5.0</span></span>
+<span id="cb5-66"><a href="#cb5-66" aria-hidden="true" tabindex="-1"></a>std <span class="op">=</span> <span class="fl">2.0</span></span>
+<span id="cb5-67"><a href="#cb5-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-68"><a href="#cb5-68" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a range of x values</span></span>
+<span id="cb5-69"><a href="#cb5-69" aria-hidden="true" tabindex="-1"></a>xmin, xmax <span class="op">=</span> plt.xlim()</span>
+<span id="cb5-70"><a href="#cb5-70" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> torch.linspace(xmin, xmax, <span class="dv">200</span>).numpy()</span>
+<span id="cb5-71"><a href="#cb5-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-72"><a href="#cb5-72" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the normal PDF: (1/(σ√(2π))) exp(-(x-μ)²/(2σ²))</span></span>
+<span id="cb5-73"><a href="#cb5-73" aria-hidden="true" tabindex="-1"></a>pdf <span class="op">=</span> (<span class="dv">1</span><span class="op">/</span>(std <span class="op">*</span> np.sqrt(<span class="dv">2</span><span class="op">*</span>np.pi))) <span class="op">*</span> np.exp(<span class="op">-</span><span class="fl">0.5</span><span class="op">*</span>((x <span class="op">-</span> mean)<span class="op">/</span>std)<span class="op">**</span><span class="dv">2</span>)</span>
+<span id="cb5-74"><a href="#cb5-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-75"><a href="#cb5-75" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the PDF line</span></span>
+<span id="cb5-76"><a href="#cb5-76" aria-hidden="true" tabindex="-1"></a>plt.plot(x, pdf, <span class="st">'r'</span>, linewidth<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb5-77"><a href="#cb5-77" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-78"><a href="#cb5-78" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Estimated mean is 4.973484516143799
+Estimated std is 1.6710020303726196</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ddim_files/figure-html/cell-4-output-2.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We see slightly worse results for the estimated mean and std. It is important to check both methods when attempting sampling to see which one performs better for your specific task.</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/zedt123\.github\.io");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

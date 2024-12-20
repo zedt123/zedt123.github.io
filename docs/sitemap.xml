@@ -6,7 +6,7 @@
   </url>
   <url>
     <loc>https://zedt123.github.io/index.html</loc>
-    <lastmod>2024-12-17T07:06:33.722Z</lastmod>
+    <lastmod>2024-12-20T19:47:16.805Z</lastmod>
   </url>
   <url>
     <loc>https://zedt123.github.io/about.html</loc>
@@ -14,10 +14,14 @@
   </url>
   <url>
     <loc>https://zedt123.github.io/posts/Diffusion/index.html</loc>
-    <lastmod>2024-12-19T17:41:03.191Z</lastmod>
+    <lastmod>2024-12-20T19:42:41.785Z</lastmod>
   </url>
   <url>
     <loc>https://zedt123.github.io/posts/VP_SDE/ve_sde_tutorial.html</loc>
     <lastmod>2024-12-17T13:34:34.350Z</lastmod>
+  </url>
+  <url>
+    <loc>https://zedt123.github.io/posts/ddim/ddim.html</loc>
+    <lastmod>2024-12-20T19:45:03.724Z</lastmod>
   </url>
 </urlset>

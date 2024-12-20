@@ -2,6 +2,7 @@
   {
     "listing": "/about.html",
     "items": [
+      "/posts/ddim/ddim.html",
       "/posts/VP_SDE/ve_sde_tutorial.html",
       "/posts/Diffusion_Code/ddpm_to_sde_tutorial.html",
       "/posts/Diffusion/index.html"
