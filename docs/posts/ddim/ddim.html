@@ -274,7 +274,7 @@ window.Quarto = {
 <p><span class="math inline">\(\tilde{\beta}_2 = 1 - \frac{\bar{\alpha}_{i_2}}{\bar{\alpha}_{i_1}}\)</span></p>
 <p><span class="math inline">\(\tilde{\beta}_t = 1 - \frac{\bar{\alpha}_{i_t}}{\bar{\alpha}_{i_{t-1}}}\)</span></p>
 <p>Below we show how to code this up.</p>
-<div id="cell-4" class="cell" data-execution_count="3">
+<div id="cell-4" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the beta</span></span>
@@ -313,9 +313,9 @@ The respaced alphas are the same: True</code></pre>
 </div>
 </div>
 <p>To check how well sample quality is with 10 respaced reverse steps, rather than 1000 we modify the exact DDPM to sample.</p>
-<div id="cell-6" class="cell" data-execution_count="5">
+<div id="cell-6" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    </span>
@@ -354,30 +354,37 @@ The respaced alphas are the same: True</code></pre>
 <span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="co"># Use the beta_tilde from above</span></span>
 <span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>diffusion <span class="op">=</span> Exact_DDPM(<span class="dv">10</span>, beta_tilde)</span>
 <span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>samples <span class="op">=</span> diffusion.reverse_diff(<span class="dv">10000</span>).numpy()</span>
-<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>plot_sample <span class="op">=</span> samples[<span class="dv">0</span>]</span>
-<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Estimated mean is </span><span class="sc">{</span>np<span class="sc">.</span>mean(plot_sample)<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Estimated std is </span><span class="sc">{</span>np<span class="sc">.</span>std(plot_sample)<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>plt.hist(plot_sample, density<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a><span class="co"># Define parameters for the normal distribution</span></span>
-<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>mean <span class="op">=</span> <span class="fl">5.0</span></span>
-<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>std <span class="op">=</span> <span class="fl">2.0</span></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>start_time <span class="op">=</span> time.time()</span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>samples <span class="op">=</span> diffusion.reverse_diff(<span class="dv">10000</span>).numpy()</span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>end_time <span class="op">=</span> time.time()</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>elapsed_time <span class="op">=</span> end_time <span class="op">-</span> start_time</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>plot_sample <span class="op">=</span> samples[<span class="dv">0</span>]</span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Estimated mean is </span><span class="sc">{</span>np<span class="sc">.</span>mean(plot_sample)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Estimated std is </span><span class="sc">{</span>np<span class="sc">.</span>std(plot_sample)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Function took </span><span class="sc">{</span>elapsed_time<span class="sc">:.4f}</span><span class="ss"> seconds to execute."</span>)</span>
 <span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a range of x values</span></span>
-<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>xmin, xmax <span class="op">=</span> plt.xlim()</span>
-<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> torch.linspace(xmin, xmax, <span class="dv">200</span>).numpy()</span>
-<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the normal PDF: (1/(σ√(2π))) exp(-(x-μ)²/(2σ²))</span></span>
-<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>pdf <span class="op">=</span> (<span class="dv">1</span><span class="op">/</span>(std <span class="op">*</span> np.sqrt(<span class="dv">2</span><span class="op">*</span>np.pi))) <span class="op">*</span> np.exp(<span class="op">-</span><span class="fl">0.5</span><span class="op">*</span>((x <span class="op">-</span> mean)<span class="op">/</span>std)<span class="op">**</span><span class="dv">2</span>)</span>
-<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the PDF line</span></span>
-<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>plt.plot(x, pdf, <span class="st">'r'</span>, linewidth<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>plt.hist(plot_sample, density<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a><span class="co"># Define parameters for the normal distribution</span></span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>mean <span class="op">=</span> <span class="fl">5.0</span></span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>std <span class="op">=</span> <span class="fl">2.0</span></span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a range of x values</span></span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a>xmin, xmax <span class="op">=</span> plt.xlim()</span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> torch.linspace(xmin, xmax, <span class="dv">200</span>).numpy()</span>
 <span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the normal PDF: (1/(σ√(2π))) exp(-(x-μ)²/(2σ²))</span></span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>pdf <span class="op">=</span> (<span class="dv">1</span><span class="op">/</span>(std <span class="op">*</span> np.sqrt(<span class="dv">2</span><span class="op">*</span>np.pi))) <span class="op">*</span> np.exp(<span class="op">-</span><span class="fl">0.5</span><span class="op">*</span>((x <span class="op">-</span> mean)<span class="op">/</span>std)<span class="op">**</span><span class="dv">2</span>)</span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the PDF line</span></span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a>plt.plot(x, pdf, <span class="st">'r'</span>, linewidth<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Estimated mean is 4.992445945739746
-Estimated std is 1.7646558284759521</code></pre>
+<pre><code>Estimated mean is 5.0006537437438965
+Estimated std is 1.7662235498428345
+Function took 0.0275 seconds to execute.</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
@@ -407,9 +414,9 @@ Estimated std is 1.7646558284759521</code></pre>
 <p>Finally we add some noise <span class="math inline">\((\sqrt{\beta}_t \boldsymbol{z}_t)\)</span>.</p>
 <p>This means that what the reverse diffusion actually does is it <strong>estimates</strong> <span class="math inline">\(\boldsymbol{x}_0\)</span> <strong>at each timestep</strong> and then uses that to create <span class="math inline">\(\boldsymbol{x}_{t-1}\)</span>.</p>
 <p>For the DDIM we do a similar thing. We first estimate <span class="math inline">\(\boldsymbol{x}_0\)</span> and then use is to sample from <span class="math inline">\(p(\boldsymbol{x}_{t-1}|\boldsymbol{x}_{t},\hat{\boldsymbol{x}}_{0})\)</span>.</p>
-<div id="cell-11" class="cell" data-execution_count="23">
+<div id="cell-11" class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    </span>
@@ -465,30 +472,36 @@ Estimated std is 1.7646558284759521</code></pre>
 <span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a><span class="co"># Use the beta_tilde from above</span></span>
 <span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a>diffusion <span class="op">=</span> Exact_DDIM(<span class="dv">10</span>, beta_tilde)</span>
 <span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a>samples <span class="op">=</span> diffusion.reverse_diff(<span class="dv">10000</span>).numpy()</span>
-<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a>plot_sample <span class="op">=</span> samples[<span class="dv">0</span>]</span>
-<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Estimated mean is </span><span class="sc">{</span>np<span class="sc">.</span>mean(plot_sample)<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Estimated std is </span><span class="sc">{</span>np<span class="sc">.</span>std(plot_sample)<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb5-62"><a href="#cb5-62" aria-hidden="true" tabindex="-1"></a>plt.hist(plot_sample, density<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb5-63"><a href="#cb5-63" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-64"><a href="#cb5-64" aria-hidden="true" tabindex="-1"></a><span class="co"># Define parameters for the normal distribution</span></span>
-<span id="cb5-65"><a href="#cb5-65" aria-hidden="true" tabindex="-1"></a>mean <span class="op">=</span> <span class="fl">5.0</span></span>
-<span id="cb5-66"><a href="#cb5-66" aria-hidden="true" tabindex="-1"></a>std <span class="op">=</span> <span class="fl">2.0</span></span>
-<span id="cb5-67"><a href="#cb5-67" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-68"><a href="#cb5-68" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a range of x values</span></span>
-<span id="cb5-69"><a href="#cb5-69" aria-hidden="true" tabindex="-1"></a>xmin, xmax <span class="op">=</span> plt.xlim()</span>
-<span id="cb5-70"><a href="#cb5-70" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> torch.linspace(xmin, xmax, <span class="dv">200</span>).numpy()</span>
-<span id="cb5-71"><a href="#cb5-71" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-72"><a href="#cb5-72" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the normal PDF: (1/(σ√(2π))) exp(-(x-μ)²/(2σ²))</span></span>
-<span id="cb5-73"><a href="#cb5-73" aria-hidden="true" tabindex="-1"></a>pdf <span class="op">=</span> (<span class="dv">1</span><span class="op">/</span>(std <span class="op">*</span> np.sqrt(<span class="dv">2</span><span class="op">*</span>np.pi))) <span class="op">*</span> np.exp(<span class="op">-</span><span class="fl">0.5</span><span class="op">*</span>((x <span class="op">-</span> mean)<span class="op">/</span>std)<span class="op">**</span><span class="dv">2</span>)</span>
-<span id="cb5-74"><a href="#cb5-74" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-75"><a href="#cb5-75" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the PDF line</span></span>
-<span id="cb5-76"><a href="#cb5-76" aria-hidden="true" tabindex="-1"></a>plt.plot(x, pdf, <span class="st">'r'</span>, linewidth<span class="op">=</span><span class="dv">2</span>)</span>
-<span id="cb5-77"><a href="#cb5-77" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-78"><a href="#cb5-78" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a>start_time <span class="op">=</span> time.time()</span>
+<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a>samples <span class="op">=</span> diffusion.reverse_diff(<span class="dv">10000</span>).numpy()</span>
+<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a>end_time <span class="op">=</span> time.time()</span>
+<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a>elapsed_time <span class="op">=</span> end_time <span class="op">-</span> start_time</span>
+<span id="cb5-62"><a href="#cb5-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-63"><a href="#cb5-63" aria-hidden="true" tabindex="-1"></a>plot_sample <span class="op">=</span> samples[<span class="dv">0</span>]</span>
+<span id="cb5-64"><a href="#cb5-64" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Estimated mean is </span><span class="sc">{</span>np<span class="sc">.</span>mean(plot_sample)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-65"><a href="#cb5-65" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Estimated std is </span><span class="sc">{</span>np<span class="sc">.</span>std(plot_sample)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-66"><a href="#cb5-66" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Function took </span><span class="sc">{</span>elapsed_time<span class="sc">:.4f}</span><span class="ss"> seconds to execute."</span>)</span>
+<span id="cb5-67"><a href="#cb5-67" aria-hidden="true" tabindex="-1"></a>plt.hist(plot_sample, density<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb5-68"><a href="#cb5-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-69"><a href="#cb5-69" aria-hidden="true" tabindex="-1"></a><span class="co"># Define parameters for the normal distribution</span></span>
+<span id="cb5-70"><a href="#cb5-70" aria-hidden="true" tabindex="-1"></a>mean <span class="op">=</span> <span class="fl">5.0</span></span>
+<span id="cb5-71"><a href="#cb5-71" aria-hidden="true" tabindex="-1"></a>std <span class="op">=</span> <span class="fl">2.0</span></span>
+<span id="cb5-72"><a href="#cb5-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-73"><a href="#cb5-73" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a range of x values</span></span>
+<span id="cb5-74"><a href="#cb5-74" aria-hidden="true" tabindex="-1"></a>xmin, xmax <span class="op">=</span> plt.xlim()</span>
+<span id="cb5-75"><a href="#cb5-75" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> torch.linspace(xmin, xmax, <span class="dv">200</span>).numpy()</span>
+<span id="cb5-76"><a href="#cb5-76" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-77"><a href="#cb5-77" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the normal PDF: (1/(σ√(2π))) exp(-(x-μ)²/(2σ²))</span></span>
+<span id="cb5-78"><a href="#cb5-78" aria-hidden="true" tabindex="-1"></a>pdf <span class="op">=</span> (<span class="dv">1</span><span class="op">/</span>(std <span class="op">*</span> np.sqrt(<span class="dv">2</span><span class="op">*</span>np.pi))) <span class="op">*</span> np.exp(<span class="op">-</span><span class="fl">0.5</span><span class="op">*</span>((x <span class="op">-</span> mean)<span class="op">/</span>std)<span class="op">**</span><span class="dv">2</span>)</span>
+<span id="cb5-79"><a href="#cb5-79" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-80"><a href="#cb5-80" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the PDF line</span></span>
+<span id="cb5-81"><a href="#cb5-81" aria-hidden="true" tabindex="-1"></a>plt.plot(x, pdf, <span class="st">'r'</span>, linewidth<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb5-82"><a href="#cb5-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-83"><a href="#cb5-83" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Estimated mean is 4.973484516143799
-Estimated std is 1.6710020303726196</code></pre>
+<pre><code>Estimated mean is 4.936343193054199
+Estimated std is 1.7014093399047852
+Function took 0.0140 seconds to execute.</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
@@ -499,6 +512,41 @@ Estimated std is 1.6710020303726196</code></pre>
 </div>
 </div>
 <p>We see slightly worse results for the estimated mean and std. It is important to check both methods when attempting sampling to see which one performs better for your specific task.</p>
+<p>Below we compare the results from the 3 methods. Note that the results were created by 10000 samples. Since our models contains randomness we get slightly different results on each run!</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Timesteps</th>
+<th>Sampling Speed (s)</th>
+<th>Mean</th>
+<th>Std</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>DDPM</td>
+<td>1000</td>
+<td>0.3716</td>
+<td>5.004</td>
+<td>1.98</td>
+</tr>
+<tr class="even">
+<td>DDPM</td>
+<td>10</td>
+<td>0.0275</td>
+<td>5.001</td>
+<td>1.76</td>
+</tr>
+<tr class="odd">
+<td>DDIM</td>
+<td>10</td>
+<td>0.0140</td>
+<td>4.936</td>
+<td>1.70</td>
+</tr>
+</tbody>
+</table>
 
 
 </section>
